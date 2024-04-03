@@ -14,9 +14,21 @@ router.get('/', function (req, res, next) {
   res.render('index', { title: 'Express' });
 });
 
-router.get('/cart',isLoggedIn, async (req, res) => {
+router.get('/profile', isLoggedIn, async function (req, res, next) {
+  const user = await userModel.findOne({ username: req.session.passport.user })
+  res.render('profile', { title: 'Express', user });
+});
+
+router.post('/uploadProfileImage', upload.single('image') , isLoggedIn, async function (req, res, next) {
+  const user = await userModel.findOne({ username: req.session.passport.user })
+  user.picture = req.file.filename
+  await user.save();
+  res.render('profile', { title: 'Express', user });
+});
+
+router.get('/cart', isLoggedIn, async (req, res) => {
   const cart = await cartModel.findOne({ user: req.params.userId }).populate('items.productId');
-  res.render('cart', {   cart });
+  res.render('cart', { cart });
 });
 
 router.get('/wishlist', async (req, res) => {
@@ -25,16 +37,16 @@ router.get('/wishlist', async (req, res) => {
 });
 
 router.post('/remove-from-cart', async (req, res) => {
-      const productId = req.body.productId;
-      const userId = req.session.userId;
-      const cart = await cartModel.findOne({ userId });
+  const productId = req.body.productId;
+  const userId = req.session.userId;
+  const cart = await cartModel.findOne({ userId });
 
-      if (cart) {
-          cart.items = cart.items.filter(item => item.productId.toString() !== productId);
-          await cart.save();
-      }
+  if (cart) {
+    cart.items = cart.items.filter(item => item.productId.toString() !== productId);
+    await cart.save();
+  }
 
-      res.redirect('/cart');
+  res.redirect('/cart');
 });
 
 router.get('/sell', function (req, res, next) {
@@ -55,15 +67,15 @@ router.post('/register', function (req, res, next) {
 
   userModel.register(user, req.body.password).then(function (registeredUser) {
     passport.authenticate("local")(req, res, function () {
-      res.redirect('/profile')
+      res.redirect('/home')
     })
   })
 })
 
-router.get('/profile', isLoggedIn, async function (req, res, next) {
+router.get('/home', isLoggedIn, async function (req, res, next) {
   const user = await userModel.findOne({ username: req.session.passport.user })
   const products = await productModel.find()
-  res.render('profile', { title: 'Express', user, products });
+  res.render('home', { title: 'Express', user, products });
 });
 
 router.post('/add-to-cart', isLoggedIn, async (req, res) => {
@@ -97,7 +109,7 @@ router.post('/add-to-wishlist', async (req, res) => {
 
   wishlist.items.push({ productId });
   await wishlist.save();
-  res.redirect('/profile');
+  res.redirect('/home');
 });
 
 router.post('/upload', upload.single('image'), async (req, res) => {
@@ -110,11 +122,11 @@ router.post('/upload', upload.single('image'), async (req, res) => {
 
   const savedProduct = await Product.save();
 
-  res.redirect('/profile');
+  res.redirect('/home');
 });
 
 router.post('/login', passport.authenticate("local", {
-  successRedirect: "/profile",
+  successRedirect: "/home",
   failureRedirect: "/login",
 }), function (req, res) { });
 

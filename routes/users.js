@@ -8,6 +8,10 @@ const userSchema = mongoose.Schema({
   password: String,
   email: String,
   contact: Number,
+  picture: {
+    type: String,
+    default: "https://www.shutterstock.com/image-vector/default-avatar-profile-icon-social-600nw-1677509740.jpg"
+  },
   type: {
     type: String,
     enum: ['buyer', 'seller'],
@@ -15,9 +19,9 @@ const userSchema = mongoose.Schema({
   },
   cart: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'cart' 
-}
-},{ timestamps: true })
+    ref: 'cart'
+  }
+}, { timestamps: true })
 
 userSchema.plugin(plm)
 
