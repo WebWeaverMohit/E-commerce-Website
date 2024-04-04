@@ -14,12 +14,18 @@ router.get('/', function (req, res, next) {
   res.render('index', { title: 'Express' });
 });
 
+router.get('/buyItem/:productId', isLoggedIn, async function (req, res, next) {
+  const user = await userModel.findOne({ username: req.session.passport.user })
+  const product = await productModel.findOne({ _id: req.params.productId })
+  res.render('buyItem', { title: 'Express', user, product });
+});
+
 router.get('/profile', isLoggedIn, async function (req, res, next) {
   const user = await userModel.findOne({ username: req.session.passport.user })
   res.render('profile', { title: 'Express', user });
 });
 
-router.post('/uploadProfileImage', upload.single('image') , isLoggedIn, async function (req, res, next) {
+router.post('/uploadProfileImage', upload.single('image'), isLoggedIn, async function (req, res, next) {
   const user = await userModel.findOne({ username: req.session.passport.user })
   user.picture = req.file.filename
   await user.save();
@@ -39,13 +45,13 @@ router.get('/wishlist', async (req, res) => {
 router.post('/remove-from-cart', async (req, res) => {
   const productId = req.body.productId;
   const userId = req.session.userId;
-  const cart = await cartModel.findOne({ userId });
+  const cart = await cartModel.findOne({ userId }).populate('items')
 
-  if (cart) {
-    cart.items = cart.items.filter(item => item.productId.toString() !== productId);
-    await cart.save();
-  }
+  // if (!cart) {
+  //   cart.items = cart.items.filter(item => item.productId.toString() !== productId);
+  // }
 
+  await cart.save();
   res.redirect('/cart');
 });
 
@@ -80,19 +86,26 @@ router.get('/home', isLoggedIn, async function (req, res, next) {
 
 router.post('/add-to-cart', isLoggedIn, async (req, res) => {
   const productId = req.body.productId;
+  const quantity = parseInt(req.body.quantity); // Parse quantity as an integer
   const user = await userModel.findOne({ _id: req.user._id });
-  console.log(user)
-
   let cart = await cartModel.findOne({ userId: user._id });
 
   console.log(cart)
 
-  cart = new cartModel({
-    userId: user._id,
-    items: []
-  });
+  if (!cart) {
+    cart = new cartModel({
+      userId: user._id,
+      items: []
+    });
+  }
 
-  cart.items.push({ productId });
+  // const existingItem = cart.items.find(item => item.productId.toString() === productId);
+
+  // if (existingItem) {
+  //   existingItem.quantity += quantity;
+  // }
+
+  cart.items.push({ productId, quantity });
   await cart.save();
   res.redirect('back');
 });
@@ -102,14 +115,22 @@ router.post('/add-to-wishlist', async (req, res) => {
   const user = await userModel.findOne({ _id: req.user._id });
   let wishlist = await wishlistModel.findOne({ userId: user });
 
-  wishlist = new wishlistModel({
-    userId: user,
-    items: []
-  });
+  if(!wishlist){
+    wishlist = new wishlistModel({
+      userId: user,
+      items: []
+    });
+  }
+
+// const isProductInWishlist = wishlist.product.find(product => productId.toString() === productId);
+
+// if (!isProductInWishlist) {
+//     wishlist.products.push(productId);
+// } 
 
   wishlist.items.push({ productId });
   await wishlist.save();
-  res.redirect('/home');
+  res.redirect('back');
 });
 
 router.post('/upload', upload.single('image'), async (req, res) => {
@@ -133,7 +154,7 @@ router.post('/login', passport.authenticate("local", {
 router.get('/logout', function (req, res, next) {
   req.logOut(function (err) {
     if (err) { return next(err); }
-    res.redirect('/')
+    res.redirect('/login')
   })
 })
 

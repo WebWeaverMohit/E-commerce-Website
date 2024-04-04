@@ -20,29 +20,40 @@
         </div>
     </nav>
 
+
     <div class="container mx-auto mt-8">
-        <h1 class="text-2xl font-bold mb-4">Your Cart</h1>
-        <div class="grid grid-cols-1 gap-4">
-            <% if (cart && cart.items && cart.items.length > 0) { %>
-                <% cart.items.forEach(function(item) { %>
-                    <div class="bg-white rounded-lg w-48 shadow-md overflow-hidden">
-                        <img src="/images/uploads/<%= item.productId.image %>" class="w-full h-48 object-cover object-center">
-                        <div class="p-4">
-                            <h3 class="font-bold text-lg mb-2"><%= item.productId.productName %></h3>
-                            <p class="text-gray-600 mb-2"><%= item.productId.description %></p>
-                            <p class="text-gray-600 mb-2">$<%= item.productId.price %></p>
+        <% if (cart && cart.items && cart.items.length > 0) { %>
+            <% cart.items.forEach(function(item) { %>
+                <div class="bg-white p-8 rounded-lg shadow-md flex flex-col md:flex-row items-center mb-8">
+                    <!-- Product Photo -->
+                    <img src="/images/uploads/<%= item.productId.image %>" alt="Product Image" class="w-48 h-48 object-cover object-center mb-4 md:mb-0 md:mr-8">
+        
+                    <!-- Product Details -->
+                    <div>
+                        <!-- Product Name -->
+                        <h1 class="text-2xl font-bold mb-4"><%= item.productId.productName %></h1>
+                        <!-- Product Price -->
+                        <p class="text-xl font-semibold mb-2">$<%= item.productId.price %></p>
+                        <!-- Quantity Selection -->
+                        <div class="mb-4">
+                            <label for="quantity" class="text-gray-600">Quantity:</label>
+                            <input type="number" id="quantity" name="quantity" min="1" value="<%= item.quantity %>" class="border rounded-md px-4 py-2 w-20" required>
                         </div>
+                        <!-- Product Description -->
+                        <p class="text-gray-600 mb-4"><%= item.productId.description %></p>
+                        <!-- Remove from Cart Form -->
                         <form action="/remove-from-cart" method="post">
                             <input type="hidden" name="productId" value="<%= item.productId._id %>">
                             <button type="submit" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">Remove from Cart</button>
                         </form>
                     </div>
-                <% }) %>
-            <% } else { %>
-                <p>Your cart is empty</p>
-            <% } %>
-        </div>
+                </div>
+            <% }) %>
+        <% } else { %>
+            <p>Your cart is empty</p>
+        <% } %>
     </div>
+    
 
 </body>
 
