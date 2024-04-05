@@ -17,6 +17,9 @@
                 <% if (user.type==='seller' ) { %>
                     <li><a href="/sell" class="text-white">Sell</a></li>
                     <% } %>
+                    <% if (user.type==='seller' ) { %>
+                        <li><a href="/myUploads" class="text-white">My uploads</a></li>
+                        <% } %>
                         <li><a href="/cart" class="text-white">Cart</a></li>
                         <li><a href="/orders" class="text-white">Orders</a></li>
                         <li><a href="/wishlist" class="text-white">Wishlist</a></li>

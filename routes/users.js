@@ -17,9 +17,17 @@ const userSchema = mongoose.Schema({
     enum: ['buyer', 'seller'],
     default: 'buyer'
   },
+  products: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'product'
+  },
   cart: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'cart'
+  },
+  wishlist: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'wishlist'
   }
 }, { timestamps: true })
 

@@ -14,6 +14,23 @@ router.get('/', function (req, res, next) {
   res.render('index', { title: 'Express' });
 });
 
+// Route to render the My Uploads page
+router.get('/myUploads', isLoggedIn, async function (req, res, next) {
+  try {
+    const userId = req.user._id;
+    const uploadedProducts = await productModel.find({ seller: userId });
+
+    console.log(uploadedProducts); // Check if products are fetched correctly
+
+    res.render('myUploads', { title: 'My Uploads', uploadedProducts, userId });
+  } catch (err) {
+    console.error(err);
+    next(err);
+  }
+});
+
+
+
 router.get('/buyItem/:productId', isLoggedIn, async function (req, res, next) {
   const user = await userModel.findOne({ username: req.session.passport.user })
   const product = await productModel.findOne({ _id: req.params.productId })
@@ -37,23 +54,44 @@ router.get('/cart', isLoggedIn, async (req, res) => {
   res.render('cart', { cart });
 });
 
-router.get('/wishlist', async (req, res) => {
+router.get('/wishlist',isLoggedIn , async (req, res) => {
+  // const user = req.params.user; 
   const wishlist = await wishlistModel.findOne({ user: req.params.userId }).populate('items.productId');
+  // const product = await productModel.findOne({ _id: req.params.productId })
   res.render('wishlist', { wishlist });
 });
 
-router.post('/remove-from-cart', async (req, res) => {
+router.post('/remove-from-wislist', isLoggedIn, async (req, res) => {
   const productId = req.body.productId;
-  const userId = req.session.userId;
-  const cart = await cartModel.findOne({ userId }).populate('items')
+  const user = await userModel.findOne({ _id: req.user._id });
+  let wishlist = await wishlistModel.findOne({ userId: user._id }).populate('items')
 
-  // if (!cart) {
-  //   cart.items = cart.items.filter(item => item.productId.toString() !== productId);
-  // }
+  const indexToRemove = wishlist.items.findIndex(item => item.productId.toString() === productId);
+
+  if (indexToRemove !== -1) {
+    wishlist.items.splice(indexToRemove, 1);
+  }
+
+  await wishlist.save();
+  res.redirect('/wishlist');
+});
+
+router.post('/remove-from-cart', isLoggedIn, async (req, res) => {
+  const productId = req.body.productId;
+  const user = await userModel.findOne({ _id: req.user._id });
+  let cart = await cartModel.findOne({ userId: user._id }).populate('items')
+
+  const indexToRemove = cart.items.findIndex(item => item.productId.toString() === productId);
+
+  if (indexToRemove !== -1) {
+    cart.items.splice(indexToRemove, 1);
+  }
 
   await cart.save();
   res.redirect('/cart');
 });
+
+
 
 router.get('/sell', function (req, res, next) {
   res.render('sell', { title: 'Express' });
@@ -86,7 +124,7 @@ router.get('/home', isLoggedIn, async function (req, res, next) {
 
 router.post('/add-to-cart', isLoggedIn, async (req, res) => {
   const productId = req.body.productId;
-  const quantity = parseInt(req.body.quantity); // Parse quantity as an integer
+  const quantity = parseInt(req.body.quantity);
   const user = await userModel.findOne({ _id: req.user._id });
   let cart = await cartModel.findOne({ userId: user._id });
 
@@ -99,13 +137,15 @@ router.post('/add-to-cart', isLoggedIn, async (req, res) => {
     });
   }
 
-  // const existingItem = cart.items.find(item => item.productId.toString() === productId);
+  const existingItem = cart.items.find(item => item.productId.toString() === productId);
 
-  // if (existingItem) {
-  //   existingItem.quantity += quantity;
-  // }
+if (existingItem) {
+    existingItem.quantity++; // Increase quantity by one
+} else {
+    // If item does not exist, add new item to cart
+    cart.items.push({ productId, quantity: 1 }); // Assuming initial quantity is 1
+}
 
-  cart.items.push({ productId, quantity });
   await cart.save();
   res.redirect('back');
 });
@@ -115,20 +155,18 @@ router.post('/add-to-wishlist', async (req, res) => {
   const user = await userModel.findOne({ _id: req.user._id });
   let wishlist = await wishlistModel.findOne({ userId: user });
 
-  if(!wishlist){
+  if (!wishlist) {
     wishlist = new wishlistModel({
       userId: user,
       items: []
     });
   }
 
-// const isProductInWishlist = wishlist.product.find(product => productId.toString() === productId);
+  const isProductInWishlist = wishlist.items.find(product => productId.toString() === productId);
 
-// if (!isProductInWishlist) {
-//     wishlist.products.push(productId);
-// } 
-
-  wishlist.items.push({ productId });
+  if (!isProductInWishlist) {
+    wishlist.items.push(productId);
+  }
   await wishlist.save();
   res.redirect('back');
 });
